@@ -1,0 +1,60 @@
+I'll help you copy files from a remote computer to your local machine using `rsync` over SSH with detailed logging.
+
+## Basic rsync Command with Progress and Logging
+
+Here's the recommended command:
+
+```bash
+rsync -avzhP --stats user@remote-host:/remote/path/ /local/path/ 2>&1 | tee rsync_log.txt
+```
+
+## Breaking Down the Options
+
+- **`-a`** (archive): Preserves permissions, timestamps, symbolic links, etc.
+- **`-v`** (verbose): Shows detailed output of what's being transferred
+- **`-z`** (compress): Compresses data during transfer
+- **`-h`** (human-readable): Shows file sizes in KB, MB, GB
+- **`-P`**: Combination of `--progress` (shows progress bar) and `--partial` (keeps partial files if interrupted)
+- **`--stats`**: Shows detailed transfer statistics at the end
+- **`2>&1 | tee rsync_log.txt`**: Displays output on screen AND saves to a log file
+
+## More Advanced Options
+
+For even more detailed logging:
+
+```bash
+rsync -avzhP --stats --itemize-changes user@remote-host:/remote/path/ /local/path/ 2>&1 | tee rsync_log_$(date +%Y%m%d_%H%M%S).txt
+```
+
+Additional useful options:
+- **`--itemize-changes`**: Shows exactly what changed for each file
+- **`--dry-run`** or **`-n`**: Test run without actually copying (highly recommended first!)
+- **`--exclude='pattern'`**: Exclude certain files/folders
+- **`--delete`**: Delete files in destination that don't exist in source (use carefully!)
+
+## Example Workflow
+
+1. **First, do a dry run:**
+```bash
+rsync -avzhP --stats --dry-run user@remote-host:/remote/path/ /local/path/
+```
+
+2. **If everything looks good, run the actual sync:**
+```bash
+rsync -avzhP --stats user@remote-host:/remote/path/ /local/path/ 2>&1 | tee rsync_log.txt
+```
+
+3. **View the log later:**
+```bash
+less rsync_log.txt
+```
+
+## Important Notes
+
+- **Trailing slashes matter!** 
+  - `/remote/path/` copies the *contents* of the folder
+  - `/remote/path` copies the folder itself
+- The command is resumable - if interrupted, run it again and it will continue
+- Use `--dry-run` first to verify what will be copied!
+
+Would you like help with any specific options or use case?
