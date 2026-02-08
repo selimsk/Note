@@ -1,0 +1,58 @@
+I'll show you the Linux terminal commands to change permissions on a pen drive for all users.
+
+## Step-by-Step Commands
+
+**1. First, identify your pen drive:**
+```bash
+lsblk
+# or
+sudo fdisk -l
+```
+Look for your pen drive (usually `/dev/sdb1`, `/dev/sdc1`, etc.)
+
+**2. Check where it's mounted:**
+```bash
+df -h
+# or
+mount | grep /dev/sdb1
+```
+It's usually mounted at `/media/yourusername/drivename` or `/mnt`
+
+**3. Change permissions on the mounted drive:**
+
+```bash
+# Give full read/write permissions to everyone
+sudo chmod 777 /media/yourusername/drivename
+
+# Or use this for files and folders
+sudo chmod -R 777 /media/yourusername/drivename
+```
+
+**4. If you need to mount it manually with full permissions:**
+
+```bash
+# Unmount first if already mounted
+sudo umount /dev/sdb1
+
+# Create mount point
+sudo mkdir -p /mnt/pendrive
+
+# Mount with full permissions (for FAT32/exFAT)
+sudo mount -o umask=0000 /dev/sdb1 /mnt/pendrive
+
+# Or for NTFS
+sudo mount -o permissions /dev/sdb1 /mnt/pendrive
+```
+
+**5. Change ownership (alternative method):**
+```bash
+sudo chown -R yourusername:users /media/yourusername/drivename
+sudo chmod -R 775 /media/yourusername/drivename
+```
+
+## Quick Permission Reference
+- `777` = full access for everyone (rwx for all)
+- `775` = full for owner/group, read+execute for others
+- `755` = full for owner, read+execute for others
+
+**What's the current error or issue you're facing?** This will help me give you the exact command you need.
