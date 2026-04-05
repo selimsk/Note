@@ -1,0 +1,129 @@
+To ensure your Mastery Hub runs automatically whenever your Raspberry Pi reboots, the most professional and reliable method is to create a **systemd service**. 
+
+This will run the app in the background, start it on boot, and even restart it automatically if it crashes.
+
+### Step 1: Create the Service File
+Open your terminal on the Pi and create a new service configuration file:
+
+```bash
+sudo nano /etc/systemd/system/mastery_hub.service
+```
+
+### Step 2: Paste the Configuration
+Paste the following into the editor. **Important:** Replace `/home/pi/your_folder` with the actual path where your `app.py` is located.
+
+```ini
+[Unit]
+Description=Mastery Hub Study Tracker
+After=network.target
+
+[Service]
+# Replace with your actual Raspberry Pi username if not 'pi'
+User=pi
+# The directory where app.py and your database are located
+WorkingDirectory=/home/pi/your_folder
+# Path to your python interpreter and the script
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+*Press `Ctrl+O` then `Enter` to save, and `Ctrl+X` to exit.*
+
+### Step 3: Enable and Start the Service
+Now, tell the Raspberry Pi to recognize this new service and start it up:
+
+```bash
+# Reload the systemd manager configuration
+sudo systemctl daemon-reload
+
+# Enable the service to run on boot
+sudo systemctl enable mastery_hub.service
+
+# Start the service immediately
+sudo systemctl start mastery_hub.service
+```
+
+### Useful Management Commands
+You can now manage your app like a professional Linux service:
+
+* **Check if it's running:** `sudo systemctl status mastery_hub.service`
+* **Stop the app:** `sudo systemctl stop mastery_hub.service`
+* **Restart (after code changes):** `sudo systemctl restart mastery_hub.service`
+* **View live logs (for debugging):** `journalctl -u mastery_hub.service -f`
+
+### A Note on IP Addresses
+Once this is running, you can access your tracker from any device on your home network (phone, tablet, or laptop) by going to:
+`http://<your-pi-ip>:5000`
+
+If you don't know your Pi's IP, type `hostname -I` in the terminal.
+sollution 1: 
+
+The error **`ModuleNotFoundError: No module named 'flask'`** occurring inside a systemd service usually means that while you might have installed Flask for your user, the **system-wide Python** (which the service uses) doesn't have it installed, or you are not using a Virtual Environment.
+
+On newer Raspberry Pi OS versions, you cannot install libraries globally using `pip` easily. The best and most stable fix is to use a **Virtual Environment**.
+
+Here is how to fix it:
+
+### 1. Create a Virtual Environment
+Run these commands in your app directory on the Raspberry Pi:
+
+```bash
+cd /home/selim/shared/app/
+
+# Create the virtual environment
+python3 -m venv venv
+
+# Activate it
+source venv/bin/activate
+
+# Install the required libraries inside the environment
+pip install flask flask-sqlalchemy google-api-python-client google-auth-httplib2 google-auth-oauthlib
+```
+
+### 2. Update your `todo.service` file
+You need to tell the service to use the Python interpreter located **inside** that new `venv` folder instead of the default system one.
+
+Edit your service file:
+```bash
+sudo nano /etc/systemd/system/todo.service
+```
+
+Change the **`ExecStart`** line to point to the `venv` path. It should look like this:
+
+```ini
+[Unit]
+Description=Study Tracker
+After=network.target
+
+[Service]
+User=selim
+WorkingDirectory=/home/selim/shared/app
+# Point this to the python3 inside your venv folder
+ExecStart=/home/selim/shared/app/venv/bin/python3 app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 3. Reload and Restart
+Apply the changes to the system:
+
+```bash
+# Reload systemd to recognize the changes
+sudo systemctl daemon-reload
+
+# Restart the service
+sudo systemctl restart todo.service
+
+# Check the status to ensure the error is gone
+sudo systemctl status todo.service
+```
+
+### Why this happened:
+When you run `pip install flask` normally, it often installs to `/home/selim/.local/lib/...`. However, when a system service starts, it doesn't always look in your user's local folder. By creating a `venv` and pointing the service directly to `/home/selim/shared/app/venv/bin/python3`, you ensure all the "modules" are exactly where the app expects them to be.
